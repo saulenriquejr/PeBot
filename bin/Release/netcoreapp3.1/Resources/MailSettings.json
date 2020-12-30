@@ -1,0 +1,8 @@
+﻿"MailSettings": {
+  "Mail": "smtp@pevaarmails.com",
+  "DisplayName": "Pevaar Bot",
+  "Password": "PevaarP@$$w0rd",
+  "Host": "mail.pevaarmails.com",
+  "Port": 587,
+  "ComercialEmail": "contacto@pevaar.com"
+}
