@@ -10,6 +10,11 @@ using Microsoft.Extensions.Hosting;
 using WelcomeUser.Common;
 using WelcomeUser.Mail;
 using WelcomeUser.Services;
+using Microsoft.Extensions.Azure;
+using Azure.Storage.Queues;
+using Azure.Storage.Blobs;
+using Azure.Core.Extensions;
+using System;
 
 namespace Microsoft.BotBuilderSamples
 {
@@ -62,6 +67,11 @@ namespace Microsoft.BotBuilderSamples
 
             //Configure State
             ConfigureState(services);
+            services.AddAzureClients(builder =>
+            {
+                builder.AddBlobServiceClient(Configuration["ConnectionStrings:storageAccount:blob"], preferMsi: true);
+                builder.AddQueueServiceClient(Configuration["ConnectionStrings:storageAccount:queue"], preferMsi: true);
+            });
 
             // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
             //services.AddTransient<IBot, DialogBot<MainDialog>>();
@@ -113,6 +123,31 @@ namespace Microsoft.BotBuilderSamples
                 });
 
             // app.UseHttpsRedirection();
+        }
+    }
+    internal static class StartupExtensions
+    {
+        public static IAzureClientBuilder<BlobServiceClient, BlobClientOptions> AddBlobServiceClient(this AzureClientFactoryBuilder builder, string serviceUriOrConnectionString, bool preferMsi)
+        {
+            if (preferMsi && Uri.TryCreate(serviceUriOrConnectionString, UriKind.Absolute, out Uri serviceUri))
+            {
+                return builder.AddBlobServiceClient(serviceUri);
+            }
+            else
+            {
+                return builder.AddBlobServiceClient(serviceUriOrConnectionString);
+            }
+        }
+        public static IAzureClientBuilder<QueueServiceClient, QueueClientOptions> AddQueueServiceClient(this AzureClientFactoryBuilder builder, string serviceUriOrConnectionString, bool preferMsi)
+        {
+            if (preferMsi && Uri.TryCreate(serviceUriOrConnectionString, UriKind.Absolute, out Uri serviceUri))
+            {
+                return builder.AddQueueServiceClient(serviceUri);
+            }
+            else
+            {
+                return builder.AddQueueServiceClient(serviceUriOrConnectionString);
+            }
         }
     }
 }

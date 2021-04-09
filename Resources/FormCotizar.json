@@ -65,8 +65,7 @@
       "type": "Action.Submit",
       "title": "Enviar",
       "data": {
-        "prop1": true,
-        "prop2": []
+        "form": "Cliente"
       }
     }
   ]

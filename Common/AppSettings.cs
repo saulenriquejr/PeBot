@@ -9,5 +9,7 @@ namespace WelcomeUser.Common
     public class AppSettings
     {
         public string ComercialEmail { get; set; }
+
+        public string OAuthConnection { get; set; }
     }
 }

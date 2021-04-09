@@ -1,14 +1,18 @@
 ﻿
 using Microsoft.AspNetCore.Http;
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using TechTalk.SpecFlow.Bindings;
+using WelcomeUser.Bots;
 using WelcomeUser.Common;
 using WelcomeUser.Mail;
 using WelcomeUser.Models;
@@ -18,24 +22,23 @@ using Attachment = Microsoft.Bot.Schema.Attachment;
 namespace Microsoft.BotBuilderSamples
 {
     public class WelcomeUserBot : ActivityHandler
-    {
-        
-            
-          
+    {          
         private const string Name = "id_name";
         private const string Description = "id_description";
         private const string Phone = "id_phone";
         private const string Mail = "id_mail";
-    
-
+        private const string Cedula = "id_cedula";
+        private const string Cargo = "id_cargo";
+        private const string FechaI = "id_dateI";
+        private const string Formulario = "form";
+        private const string Lideres = "Lideres";
+        private const string FechaF = "id_dateF";
 
         private readonly BotState _userState;
         private readonly AppSettings _appSetting;
         public readonly IMailService mailService;
-        //private readonly IAppServices _appServices;
         private readonly StateService _stateService;
         private readonly BotServices _botServices;
-
 
         public static bool DidBotWelcomeUser { get; private set; }
 
@@ -45,7 +48,6 @@ namespace Microsoft.BotBuilderSamples
         { 
             _userState = userState;
             this.mailService = mailService;
-            //_appServices = appServices;
             _appSetting = appSetting;
             _stateService = stateService ?? throw new System.ArgumentNullException(nameof(stateService));
             _botServices = botServices ?? throw new System.ArgumentNullException(nameof(stateService)); 
@@ -56,13 +58,21 @@ namespace Microsoft.BotBuilderSamples
         {
             Path.Combine(".", "Resources", "FormCotizar.json"),
             Path.Combine(".", "Resources", "FormTrabajaConNosotr.json"),
+            Path.Combine(".", "Resources", "FormCertificado.json"),
+            Path.Combine(".", "Resources", "FormInasistenciaJustif.json"),
         };
         public int inConversation;
 
         public static IFormFile remoteFileUrl { get; private set; }
         public static IList<Attachment> Attachments { get; private set; }
 
-        
+        Saludo saludo = new Saludo();
+        Despedida despedida = new Despedida();
+        Emociones emociones = new Emociones();
+        MenuPevaar menuPevaar = new MenuPevaar();
+        QnA qna = new QnA();
+        Información información = new Información();
+
 // Greet when users are added to the conversation. Note that all channels do not send the conversation update activity. If you find that this bot works in the emulator, but does not in
 // another channel the reason is most likely that the channel does not send this activity.
 
@@ -72,8 +82,9 @@ namespace Microsoft.BotBuilderSamples
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
-                    await SendHiCardAsync(turnContext, cancellationToken);
-                    await SendIntroCardAsync(turnContext, cancellationToken);
+                    
+                    await saludo.SendHiCardAsync(turnContext, cancellationToken);
+                    await saludo.SendIntroCardAsync(turnContext, cancellationToken);
                 }
             }
         }
@@ -85,46 +96,6 @@ namespace Microsoft.BotBuilderSamples
         //        await turnContext.SendActivityAsync("Got webchat/join event.");
         //    }
         //}
-
-
-        private async Task SendHiCardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            var card = new HeroCard
-            {
-                Title = "Bienvenido a PEVAAR SOFTWARE FACTORY!!!",
-                Text = @"Soy PeBot tu asistente Virtual y estoy aquí para ayudarte.",
-                Images = new List<CardImage>() { new CardImage("https://i.picasion.com/pic90/68978a4edf1400af271f05adad9f3ce7.gif") },
-
-            };
-
-            var response = MessageFactory.Attachment(card.ToAttachment());
-            await turnContext.SendActivityAsync(response, cancellationToken);
-        }
-
-        private static async Task SendEmailCardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            var card = new HeroCard
-            {
-                Title = "He recibido toda la información que necesito!!!",
-                Text = @"En pocos segundos pondre tu correo en la bandeja de entrada y enviare una copia a tu direccion de E-mail.",
-                Images = new List<CardImage>() { new CardImage("https://i.picasion.com/pic90/c9c5a326c946c688bde7b82244ffa6ec.gif") },
-
-            };
-
-            var response = MessageFactory.Attachment(card.ToAttachment());
-            await turnContext.SendActivityAsync(response, cancellationToken);
-        }
-
-        private static async Task SmileCardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            var card = new HeroCard
-            { 
-                Images = new List<CardImage>() { new CardImage("https://i.picasion.com/pic90/8958dd1ff9761598e7198b38f3b26c19.gif") },
-            };
-
-            var response = MessageFactory.Attachment(card.ToAttachment());
-            await turnContext.SendActivityAsync(response, cancellationToken);
-        }
 
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {   
@@ -147,17 +118,33 @@ namespace Microsoft.BotBuilderSamples
                     switch (text)
                     {
                         case "información general":
-                            await SendInfGenCardAsync(turnContext, cancellationToken);
+                            await información.SendInfGenCardAsync(turnContext, cancellationToken);
                             break;
                         case "contactenos":
-                            await SendKnowlCardAsync(turnContext, cancellationToken);
+                            await información.SendKnowlCardAsync(turnContext, cancellationToken);
+                            break;
+                        case "soy pevaar":
+                            ////var magicCode = await OauthCardAsync(turnContext, cancellationToken);
+                            
+                            //var token = await GetUserTokenAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                            //if (token != null)"OauthPeBotConnection", magicCode
+                            //{
+                            //    // use the token to do exciting things!
+                            //}
+                            //else
+                            //{
+                                // If Bot Service does not have a token, send an OAuth card to sign in
+                                //var magicCode = 
+                            await OauthCardAsync(turnContext, cancellationToken);
+                            //}
+                            //
                             break;
                         case "conversemos un rato":
                             inConversation = 1;
                             await GetName(turnContext, cancellationToken);
                             break;
                         case "finalizar conversación":
-                            await SendByeCardAsync(turnContext, cancellationToken);
+                            await despedida.SendByeCardAsync(turnContext, cancellationToken);
                             break;
                         case "cotizaciones":
                             r = 0;
@@ -166,6 +153,26 @@ namespace Microsoft.BotBuilderSamples
                         case "trabaje con nosotros":
                             r = 1;
                             await RecruitingSteps(turnContext, cancellationToken);
+                            break;
+                        case "certificado":
+                            r = 2;
+                            await FormActivityAsync(turnContext, cancellationToken, r);
+                            //await menuPevaar.GenerarCertificado(turnContext, cancellationToken);
+                            break;
+                        case "ausencias":
+                            r = 3;
+                            await FormActivityAsync(turnContext, cancellationToken, r);
+                            //await menuPevaar.PresentarAusencia(turnContext, cancellationToken);
+                            break;
+                        case "inspección equipo":
+                            await menuPevaar.InspeccionEquipo(turnContext, cancellationToken);
+                            break;
+                        case "volver al menú principal":
+                            await turnContext.SendActivityAsync(MessageFactory.Text($"Primero cerraremos la sesión y podras elegir que hacer ahora."), cancellationToken);
+                            var botAdapter = (BotFrameworkAdapter)turnContext.Adapter;
+                            await botAdapter.SignOutUserAsync(turnContext, "OauthPeBotConnection", null, cancellationToken);
+                            didBotWelcomeUser.DidBotWelcomeUser = false;
+                            await saludo.SendIntroCardAsync(turnContext, cancellationToken);
                             break;
                     }
                 }
@@ -176,9 +183,27 @@ namespace Microsoft.BotBuilderSamples
             if (string.IsNullOrEmpty(turnContext.Activity.Text) && turnContext.Activity.Value!=null)
             {
                 await validationsAssert(turnContext, cancellationToken);
-                if (turnContext.Responded == false) 
+
+                if (turnContext.Responded == false)
                 {
                     dynamic value = turnContext.Activity.Value;
+                    string form = value[Formulario];
+                    string cedula = value[Cedula];
+                    string cargo = value[Cargo];
+                    string nombre = value[Name];
+                    string fechaInicio = value[FechaI];
+                    string fechaFinal = value[FechaF];
+                    string descripcion = value[Description];
+                    string lideres = value[Lideres];
+
+                    if ("Certificado" == (form)) 
+                    { 
+                        await menuPevaar.GenerarCertificado(turnContext, cancellationToken, cedula, cargo, nombre, fechaInicio, fechaFinal, descripcion ); 
+                    };
+                    if ("Inasistencia" == (form)) 
+                    { 
+                        await menuPevaar.PresentarAusencia(turnContext, cancellationToken, nombre, fechaInicio, fechaFinal, descripcion, lideres); 
+                    };
                     string comercialEmail = _appSetting.ComercialEmail;
                     string textPlain = $"Nombre del Solicitante = {value[Name]}" + "  \n \n \n" + $"Descripción de la solicitud = {value[Description]}" + " \n \n \n" + $"Telefono de contacto = {value[Phone]}" + " \n \n \n" + $"Correo Electronico de contacto = {value[Mail]}";
                     if (null!=(value[Description])) 
@@ -198,7 +223,7 @@ namespace Microsoft.BotBuilderSamples
                 
                         var response = MessageFactory.Attachment(card.ToAttachment());
                         didBotWelcomeUser.DidBotWelcomeUser = false;
-                        await SendEmailCardAsync(turnContext, cancellationToken);
+                        await emociones.SendEmailCardAsync(turnContext, cancellationToken);
                         await turnContext.SendActivityAsync(response, cancellationToken); 
                     }
                     else if (string.IsNullOrEmpty(value[Description]))
@@ -216,11 +241,11 @@ namespace Microsoft.BotBuilderSamples
 
                         var response = MessageFactory.Attachment(card.ToAttachment());
 
-                        await SendEmailCardAsync(turnContext, cancellationToken);
+                        await emociones.SendEmailCardAsync(turnContext, cancellationToken);
                         await turnContext.SendActivityAsync(response, cancellationToken);
                     };
                     var EmailAttachments = Attachments;
-                    await SendIntroCardAsync(turnContext, cancellationToken);
+                    await saludo.SendIntroCardAsync(turnContext, cancellationToken);
                     string eMail = value[Mail];
                     string description = value[Description];
 
@@ -279,7 +304,7 @@ namespace Microsoft.BotBuilderSamples
                                 case "Horarios":
                                     await turnContext.SendActivityAsync(MessageFactory.Text($"Será un gusto conocerte y atenderte personalmente."), cancellationToken);
                                     didBotWelcomeUser.DidBotWelcomeUser = false;
-                                    await SendHorarCardAsync(turnContext, cancellationToken);
+                                    await información.SendHorarCardAsync(turnContext, cancellationToken);
                                     break;
                                 case "Misión":
                                     await turnContext.SendActivityAsync(MessageFactory.Text($"Es una pregunta muy interesante."), cancellationToken);
@@ -291,7 +316,7 @@ namespace Microsoft.BotBuilderSamples
                                     await FormActivityAsync(turnContext, cancellationToken, 1);
                                     break;
                                 case "Salir":
-                                    await SendByeCardAsync(turnContext, cancellationToken);
+                                    await despedida.SendByeCardAsync(turnContext, cancellationToken);
                                     break;
                                 case "Menú_principal":
                                     turnContext.Activity.Text = "ir al menú principal";
@@ -299,16 +324,21 @@ namespace Microsoft.BotBuilderSamples
                                 case "Telefonos":
                                     await turnContext.SendActivityAsync(MessageFactory.Text($"Será un gusto atenderte."), cancellationToken);
                                     didBotWelcomeUser.DidBotWelcomeUser = false;
-                                    await SendPhoneCardAsync(turnContext, cancellationToken);
+                                    await información.SendPhoneCardAsync(turnContext, cancellationToken);
                                     break;
                                 case "Visión":
                                     await turnContext.SendActivityAsync(MessageFactory.Text($"Es una pregunta muy interesante."), cancellationToken);
                                     turnContext.Activity.Text = "Visión";
                                     break;
+                                case "CodigoMagico":
+                                    await turnContext.SendActivityAsync(MessageFactory.Text($"Estas autenticado compañero, Que deseas hacer ahora estimado Pevaariano?"), cancellationToken);
+                                    await emociones.SmileCardAsync(turnContext, cancellationToken);
+                                    turnContext.Activity.Text = "MenuPevaar";
+                                    break;
                                 default:
                                     await turnContext.SendActivityAsync(MessageFactory.Text($"Espero una de estas opciones pueda ayudarte."), cancellationToken);
                                     didBotWelcomeUser.DidBotWelcomeUser = false;
-                                    await SendIntroCardAsync(turnContext, cancellationToken);
+                                    await saludo.SendIntroCardAsync(turnContext, cancellationToken);
                                     break;
                             }
                         }
@@ -323,30 +353,40 @@ namespace Microsoft.BotBuilderSamples
                         case "visión":
                         case "nuestros activos":
                         case "¿que hacemos?":
-                            await SendQnACardAsync(turnContext, cancellationToken);
+                            await qna.SendQnACardAsync(turnContext, cancellationToken);
                             break;
                         case "si, deseo finalizar la conversación":
                             await turnContext.SendActivityAsync($"Ha sido un placer atenderte, Hasta pronto!!!.", cancellationToken: cancellationToken);
-                            await SmileCardAsync(turnContext, cancellationToken); 
+                            await emociones.SmileCardAsync(turnContext, cancellationToken); 
                             break;
                         case "ir al menú principal":
                         case "no, deseo volver al menú principal.":
                             didBotWelcomeUser.DidBotWelcomeUser = false;
-                            await SendIntroCardAsync(turnContext, cancellationToken);
+                            await saludo.SendIntroCardAsync(turnContext, cancellationToken);
                             turnContext.Activity.Text = "";
                             break;
                         case "horario de atención":
                             didBotWelcomeUser.DidBotWelcomeUser = false;
-                            await SendHorarCardAsync(turnContext, cancellationToken);
+                            await información.SendHorarCardAsync(turnContext, cancellationToken);
                             break;
                         case "telefonos":
                             didBotWelcomeUser.DidBotWelcomeUser = false;
-                            await SendPhoneCardAsync(turnContext, cancellationToken);
+                            await información.SendPhoneCardAsync(turnContext, cancellationToken);
                             break;
                         case "seguir conociendo pevaar":
-                            await SendInfGenCardAsync(turnContext, cancellationToken);
+                            await información.SendInfGenCardAsync(turnContext, cancellationToken);
                             didBotWelcomeUser.DidBotWelcomeUser = false;
                             break;
+                        case "soy pevaar":
+                            didBotWelcomeUser.DidBotWelcomeUser = false;
+                            
+                            turnContext.Activity.Text = "Soy PEVAAR";
+                            break;
+                        case "menupevaar":
+                            await menuPevaar.SendPevaarCardAsync(turnContext, cancellationToken);
+                            didBotWelcomeUser.DidBotWelcomeUser = false;
+                            break;
+                           
 
                     }
 
@@ -378,110 +418,7 @@ namespace Microsoft.BotBuilderSamples
             while (null == turnContext.Activity.Attachments)
             { if (null != turnContext.Activity.Attachments) { Attachments = turnContext.Activity.Attachments; } };
         }
-
-        private static async Task SendIntroCardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-
-            var newcard = new HeroCard
-            {
-
-                Text = @"¿Que deseas Hacer?",
-                Buttons = new List<CardAction>()
-                {
-                    new CardAction(ActionTypes.MessageBack,"Información General",null,"Información General","Información General","Información General"),
-                    new CardAction(ActionTypes.MessageBack,"Contactenos",null,"Contactenos","Contactenos","Contactenos"),
-                    new CardAction(ActionTypes.MessageBack, "Cotizaciones", null, "Cotizaciones", "Cotizaciones", "Cotizaciones"),
-                    new CardAction(ActionTypes.MessageBack, "Trabaje con nosotros", null, "Trabaje con nosotros","Trabaje con nosotros","Trabaje con nosotros"),
-                    new CardAction(ActionTypes.MessageBack, "Conversemos un rato", null, "Conversemos un rato","Conversemos un rato","Conversemos un rato"),
-                    new CardAction(ActionTypes.MessageBack, "Finalizar Conversación", null, "Finalizar Conversación", "Finalizar Conversación", "Finalizar Conversación"),
-                }
-            };
-
-            var response2 = MessageFactory.Attachment(newcard.ToAttachment());
-            await turnContext.SendActivityAsync(response2, cancellationToken);
-        }
-
-        private static async Task SendByeCardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            var card = new HeroCard
-            {
-                Text = @"¿Estas seguro que deseas salir?",
-                Images = new List<CardImage>() { new CardImage("https://aka.ms/bf-welcome-card-image") },
-                Buttons = new List<CardAction>()
-                {
-                    new CardAction(ActionTypes.MessageBack,"Si, deseo finalizar la conversación.",null,"Si, deseo finalizar la conversación","Si, deseo finalizar la conversación","Si, deseo finalizar la conversación"),
-                    new CardAction(ActionTypes.MessageBack, "No, deseo volver al menú principal.", null, "No, deseo volver al menú principal.", "No, deseo volver al menú principal.", "No, deseo volver al menú principal.")
-                }
-            };
-            var response = MessageFactory.Attachment(card.ToAttachment());
-            await turnContext.SendActivityAsync(response, cancellationToken);
-        }
-
-        private static async Task SendPhoneCardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            var card = new ThumbnailCard
-            {
-                Title = "Telefonos de Contacto e Informacion",
-                Subtitle = "Contactenos para tener el gusto de atenderlos",
-                Text = "PBX: +57 (1) 717-298 \n \n \n" +
-                       "Móvil: +57(301) 336 - 1362 \n \n \n" +
-                       "¿Ahora que deseas hacer?",
-                Images = new List<CardImage> { new CardImage("https://holatelcel.com/wp-content/uploads/2017/11/celular.gif") },
-                Buttons = new List<CardAction> {
-                        new CardAction(ActionTypes.MessageBack,"Ir al menú principal",null,"Ir al menú principal","Ir al menú principal","Ir al menú principal"),
-                        new CardAction(ActionTypes.MessageBack, "Finalizar conversación", null, "Finalizar conversación", "Finalizar conversación", "Finalizar conversación"),
-                    },
-            };
-
-            var response = MessageFactory.Attachment(card.ToAttachment());
-            await turnContext.SendActivityAsync(response, cancellationToken);
-
-
-        }
-
-        private static async Task SendHorarCardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            var card = new ThumbnailCard
-            {
-                Title = "Información de Nuestras Oficinas",
-                Subtitle = "Visitenos para tener el gusto de atenderlos",
-                Text = "Visitanos en: \n \n \n" +
-                           "Bogotá: Calle 68 # 12 – 32  \n \n \n" +
-                           "Barranquilla: Calle 75 C # 39 – 143, oficina 01 \n \n \n" +
-                           "Horarios de Atención: \n \n \n" +
-                           "Lunes a Viernes: 8:00 am – 12:00 am  y de  2:00 pm - 6:00 pm  \n \n \n" +
-                           "Sábados y Domingos: Cerrado \n \n \n" +
-                           "¿Ahora que deseas hacer?",
-                Images = new List<CardImage> { new CardImage("https://www.yorokobu.es/src/uploads/2013/06/tumblr_inline_mm3bmbPITb1qz4rgp.gif") },
-                Buttons = new List<CardAction> {
-                        new CardAction(ActionTypes.MessageBack,"Ir al menú principal",null,"Ir al menú principal","Ir al menú principal","Ir al menú principal"),
-                        new CardAction(ActionTypes.MessageBack, "Finalizar conversación", null, "Finalizar conversación", "Finalizar conversación", "Finalizar conversación"),
-                    },
-            };
-
-            var response = MessageFactory.Attachment(card.ToAttachment());
-            await turnContext.SendActivityAsync(response, cancellationToken);
-        }
-
-        private static async Task SendKnowlCardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            var attachments = new List<Attachment>();
-
-            var card = new HeroCard
-            {
-                Text = @"¿Que te gustaría saber?",
-                Images = new List<CardImage>() { new CardImage("https://aka.ms/bf-welcome-card-image") },
-                Buttons = new List<CardAction>()
-                {
-                    new CardAction(ActionTypes.MessageBack,"Mostrar telefonos",null,"Telefonos","Mostrar telefonos"),
-                    new CardAction(ActionTypes.MessageBack, "Mostrar horario", null, "Horario de atención", "Mostrar horario")
-                }
-            };
-
-            var response = MessageFactory.Attachment(card.ToAttachment());
-            await turnContext.SendActivityAsync(response, cancellationToken);
-        }
-
+        
         protected async Task FormActivityAsync(ITurnContext turnContext, CancellationToken cancellationToken, int r)
         {
             var cardAttachment = CreateAdaptiveCardAttachment(_cards[r]);
@@ -532,92 +469,32 @@ namespace Microsoft.BotBuilderSamples
             return adaptiveCardAttachment;
         }
 
-        private static async Task SendInfGenCardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        private static async Task OauthCardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            var reply = MessageFactory.Text("Que te gustaría saber acerca de PEVAAR Software Factory?");
-
-            reply.SuggestedActions = new SuggestedActions()
+            var oauthCard = new OAuthCard
             {
-                Actions = new List<CardAction>()
-                {
-                    new CardAction() { Title = "¿Quienes Somos?", Type = ActionTypes.ImBack, Value = "¿Quienes Somos?", Image = null, ImageAltText = null },
-                    new CardAction() { Title = "Visión", Type = ActionTypes.ImBack, Value = "Visión", Image = null, ImageAltText = null },
-                    new CardAction() { Title = "Nuestros Activos", Type = ActionTypes.ImBack, Value = "Nuestros Activos", Image = null, ImageAltText = null},
-                    new CardAction() { Title = "¿Que Hacemos?", Type = ActionTypes.ImBack, Value = "¿Que Hacemos?", Image = null, ImageAltText = null},
-                },
+                Text = "BotFramework OAuth Card",
+                ConnectionName = "OauthPeBotConnection",//_appSetting.OAuthConnection Replace with the name of your Azure AD connection.
+
+                Buttons = new List<CardAction> { new CardAction(ActionTypes.Signin, "Sign In", "Pevaar SignIn", "https://login.microsoftonline.com/organizations/oauth2/v2.0/token") },
+                
             };
-            await turnContext.SendActivityAsync(reply, cancellationToken);
-        }
-
-        private static async Task SendQnACardAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            //string title,string subtitle, string image,
-                    string Concepto = "Somos una nueva generación de proveedores de servicios " +
-                                               " de tecnología, enfocados en ofrecer soluciones innovadoras de " +
-                                               "software mediantemediante el aprovechamiento de las tecnologías y" +
-                                               "tendencias emergentes . Combinamos la ingeniería y el rigor técnico" +
-                                               "de los proveedores de servicios de TI con el enfoque creativo y " +
-                                               "cultural de las agencias digitales. \n \n \n \n ";
-
-                    string Visión = "Nuestra visión es convertirnos en la mejor compañía " +
-                                                        "de desarrollo de soluciones, combinando lo mejor" + 
-                                                        "de la ingeniería, la innovación y el diseño. Nuestro " +
-                                                        "objetivo es ser el líder en la creación de productos" +
-                                                        "de software innovadores atractivos para las audiencias globales. \n \n \n \n ";
-
-                    string Activos = "Además de nuestros clientes y las relaciones con ellos establecidas," +
-                                                        "contamos con 4 activos fundamentales para nosotros." +
-                                                        "\n \n Equipo: Un equipo joven, proactivo, especializado e" +
-                                                        "implicado en los proyectos y con los clientes." +
-                                                        "\n \n Metodología: Tanto a nivel técnico como de gestión" +
-                                                        "de proyectos que nos aporta calidad y eficiencia." +
-                                                        "\n \n Knowhow: Nuestra experiencia y conocimiento a lo largo" +
-                                                        "de los años es clave para ofrecer soluciones de valor." +
-                                                        "\n \n Tecnología: El conocimiento de la tecnología y la capacidad" +
-                                                        "de reciclarnos y evolucionar tecnológicamente. \n \n \n \n ";
-
-                     string Hacemos = "Ayudamos a nuestros clientes en su estrategia y desarrollo " +
-                                                          "e-business integrándonos como Partner Tecnológico y aportando " +
-                                                          "nuestra capacidad, experiencia y conocimiento como valor añadido." +
-                                                          "Desarrollamos proyectos modulares y escalables – integrados con " +
-                                                          "los procesos de negocio – para que nuestros clientes puedan ofrecer" +
-                                                          "servicios de valor añadido en entornos web y móvil a nivel B2C y B2B. \n \n \n \n ";
-
-            var title = turnContext.Activity.Text.ToUpper();
-            switch (turnContext.Activity.Text)
-            {
-                case "¿Quienes Somos?":
-                    await SendInfoCardAsync(turnContext, cancellationToken, title, null, Concepto, "https://pevaaar.azurewebsites.net/wp-content/uploads/2017/03/logo.png");
-                    break;
-                case "Visión":
-                    await SendInfoCardAsync(turnContext, cancellationToken, title, null, Visión, "https://pevaaar.azurewebsites.net/wp-content/uploads/2017/03/idea.png");
-                    break;
-                case "Nuestros Activos":
-                    await SendInfoCardAsync(turnContext, cancellationToken, title, null, Activos, "https://pevaaar.azurewebsites.net/wp-content/uploads/2017/03/cloud1.png");
-                    break;
-                case "¿Que Hacemos?":
-                    await SendInfoCardAsync(turnContext, cancellationToken, title, null, Hacemos, "https://pevaaar.azurewebsites.net/wp-content/uploads/2017/03/diagrama.png");
-                    break;
-            }
-        }
-
-        private static async Task SendInfoCardAsync(ITurnContext turnContext, CancellationToken cancellationToken, string title, string subtitle, string text, string image)
-        {
-            var card = new ThumbnailCard
-            {
-                Title = title,
-                Subtitle = subtitle,
-                Text = text,
-                Images = new List<CardImage> { new CardImage(image) },
-                Buttons = new List<CardAction> {
-                        new CardAction(ActionTypes.MessageBack,"Ir al menú principal",null,"Ir al menú principal","Ir al menú principal","Ir al menú principal"),
-                        new CardAction(ActionTypes.MessageBack,"Seguir conociendo PEVAAR",null,"Seguir conociendo PEVAAR","Seguir conociendo PEVAAR","Seguir conociendo PEVAAR"),
-                        new CardAction(ActionTypes.MessageBack, "Finalizar conversación", null, "Finalizar conversación", "Finalizar conversación", "Finalizar conversación"),
-                },
-            };
-
-            var response = MessageFactory.Attachment(card.ToAttachment());
+            var response = MessageFactory.Attachment(oauthCard.ToAttachment());
             await turnContext.SendActivityAsync(response, cancellationToken);
+
+            //new OAuthPrompt(
+            //nameof(OAuthPrompt),
+            //new OAuthPromptSettings
+            //{
+            //    ConnectionName = "OauthPeBotConnection",
+            //    Text = "Please Sign In",
+            //    Title = "Sign In",
+            //    Timeout = 300000, // User has 5 minutes to login (1000 * 60 * 5)
+            //}); 
+
+            //var tokenResponse = (TokenResponse)turnContext;
+            //return tokenResponse;
+
         }
 
         private async Task GetName(ITurnContext turnContext, CancellationToken cancellationToken)
@@ -657,7 +534,18 @@ namespace Microsoft.BotBuilderSamples
 
             }
         }
+        ////private async Task SendOAuthCardAsync(IDialogContext context, Activity activity)
+        ////{
+        ////    await context.PostAsync($"To do this, you'll first need to sign in.");
 
+        ////    var reply = await context.Activity.CreateOAuthReplyAsync(_connectionName, _signInMessage, _buttonLabel).ConfigureAwait(false);
+        ////    await context.PostAsync(reply);
+
+        ////    context.Wait(WaitForToken);
+        ////}
+
+        ////public virtual System.Threading.Tasks.Task<Microsoft.Bot.Schema.TokenResponse> GetUserTokenAsync(Microsoft.Bot.Builder.ITurnContext turnContext, string connectionName, string magicCode, System.Threading.CancellationToken cancellationToken = default) { return null; }
+        //public Task<TokenResponse> GetUserTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken = default);
 
     }
 }

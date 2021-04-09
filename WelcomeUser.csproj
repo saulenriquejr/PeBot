@@ -3,8 +3,12 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <UserSecretsId>d9087c0d-f300-48e2-9788-d70c5204e7a4</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.3.0" />
+    <PackageReference Include="Azure.Storage.Files.Shares" Version="12.1.0" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.2.0" />
     <PackageReference Include="FluentAssertions" Version="5.10.3" />
     <PackageReference Include="MailKit" Version="2.9.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.1" />
@@ -14,8 +18,12 @@
     <PackageReference Include="Microsoft.Bot.Builder.Dialogs" Version="4.9.0" />
     <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.11.0" />
     <PackageReference Include="Microsoft.Bot.Connector" Version="4.11.0" />
+    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.0.0" />
     <PackageReference Include="MimeKit" Version="2.9.2" />
+    <PackageReference Include="PdfSharpCore" Version="1.2.16" />
     <PackageReference Include="SendGrid" Version="9.21.2" />
+    <PackageReference Include="SpecFlow" Version="3.7.13" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
     <PackageReference Include="System.Interactive" Version="4.1.1" />
   </ItemGroup>
 

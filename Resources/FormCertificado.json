@@ -1,0 +1,118 @@
+﻿{
+  "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.0",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Formulario de Certificación",
+      "size": "large",
+      "weight": "bolder",
+      "isSubtle": false
+    },
+    {
+      "type": "TextBlock",
+      "text": "Por favor complete el formulario teniendo en cuenta su contrato para atender a su solicitud:",
+      "separator": true,
+      "spacing": "medium",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Por favor ingrese su nombre completo:",
+      "separator": true,
+      "spacing": "medium"
+    },
+    {
+      "type": "Input.Text",
+      "id": "id_name"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Por favor ingrese el número de su documento de identificación:",
+      "separator": true,
+      "spacing": "medium"
+    },
+    {
+      "type": "Input.Text",
+      "id": "id_cedula"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Por favor ingrese la denominación del cargo desempeñado:",
+      "separator": true,
+      "spacing": "medium"
+    },
+    {
+      "type": "Input.Text",
+      "id": "id_cargo"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Por favor ingrese una descripción de sus funciones, separadas en parrafos:",
+      "wrap": true,
+      "separator": true,
+      "spacing": "medium"
+    },
+    {
+      "type": "Input.Text",
+      "style": "text",
+      "isMultiline": true,
+      "id": "id_description"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Por favor ingrese la fecha inicial de ausencia:",
+      "separator": true,
+      "spacing": "medium"
+    },
+    {
+      "type": "Input.Date",
+      "id": "id_dateI",
+      "placeholder": "Ingrese la fecha",
+      "value": "2021-10-12"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Por favor ingrese la fecha final de ausencia:",
+      "separator": true,
+      "spacing": "medium"
+    },
+    {
+      "type": "Input.Date",
+      "id": "id_dateF",
+      "placeholder": "Ingrese la fecha",
+      "value": "2021-10-12"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Por favor ingrese un telefono de contacto:",
+      "separator": true,
+      "spacing": "medium"
+    },
+    {
+      "type": "Input.Text",
+      "id": "id_phone"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Por favor ingrese su correo:",
+      "separator": true,
+      "pattern": "^([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)$",
+      "spacing": "medium"
+    },
+    {
+      "type": "Input.Text",
+      "id": "id_mail"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Enviar",
+      "data": {
+        "form": "Certificado"
+      }
+    }
+  ]
+}

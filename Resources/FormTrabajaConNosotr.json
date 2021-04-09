@@ -15,7 +15,8 @@
       "isMultiline": true,
       "text": " 2. Ahora porfavor, llena los campos del formulario y haz click en el botón enviar.",
       "separator": true,
-      "spacing": "medium"
+      "spacing": "medium",
+      "wrap": true
     },
     {
       "type": "TextBlock",
@@ -54,8 +55,7 @@
       "type": "Action.Submit",
       "title": "Enviar",
       "data": {
-        "prop1": true,
-        "prop2": []
+        "form": "Candidato"
       }
     }
   ]
